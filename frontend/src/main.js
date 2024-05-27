@@ -7,6 +7,8 @@ import MainPage from './views/MainPage.vue'
 import AuthForm from './views/userAuthForm.vue'
 import registerPage from './views/registerPage.vue'
 import addBooks from './views/addBooks.vue'
+import editBooks from './views/editBooks.vue'
+
 const router = createRouter({
   routes: [
     {
@@ -24,6 +26,10 @@ const router = createRouter({
     {
       path: '/addBooks',
       component: addBooks
+    },
+    {
+      path: '/editBooks/:id',
+      component: editBooks
     }
   ],
   history: createWebHistory()

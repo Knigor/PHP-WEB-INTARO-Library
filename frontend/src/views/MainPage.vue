@@ -29,11 +29,25 @@
               <p>{{ item.author }}</p>
             </div>
             <div v-if="isvisible" class="flex flex-wrap gap-4 absolute bottom-0 left-0 ml-4">
-              <Button class="w-[100px] text-orange-400" variant="link">Редактировать</Button>
-              <Button class="w-[80px] text-red-700" variant="link">Удалить</Button>
+              <router-link :to="{ path: `/editBooks/${item.id_book}` }"
+                ><Button class="w-[100px] text-orange-400" variant="link"
+                  >Редактировать</Button
+                ></router-link
+              >
+
+              <Button @click="deleteBook(item.id_book)" class="w-[80px] text-red-700" variant="link"
+                >Удалить</Button
+              >
             </div>
           </div>
         </div>
+        <Button
+          @click="downloadBook(item.id_book)"
+          v-if="(isDownload = item.allow_download)"
+          class="w-[80px] ml-1 text-green-600"
+          variant="link"
+          >Скачать</Button
+        >
       </div>
     </div>
   </div>
@@ -55,9 +69,56 @@ const goToAuth = () => {
   router.push('/auth')
 }
 
+// удаляем книгу
+
+const deleteBook = async (id) => {
+  const formData = new FormData()
+  formData.append('id', id)
+
+  console.log(id)
+
+  try {
+    const response = await axios.post('http://localhost/deleteBook', formData)
+
+    console.log(response.data)
+
+    booksFetch()
+  } catch (error) {
+    console.error('Ошибка при скачивании файла:', error)
+  }
+}
+
+// скачиваем книгу
+
+const downloadBook = async (id) => {
+  const formData = new FormData()
+  formData.append('id', id)
+
+  console.log(id)
+  try {
+    const response = await axios.post('http://localhost/downloadBook', formData, {
+      responseType: 'Blob'
+    })
+
+    console.log(response.data)
+
+    console.log(response.headers)
+
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'file.txt') // Получаем имя файла из заголовка
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } catch (error) {
+    console.error('Ошибка при скачивании файла:', error)
+  }
+}
+
 const items = ref([])
 
-onMounted(async () => {
+const booksFetch = async () => {
   try {
     const response = await axios.get('http://localhost/books')
     items.value = response.data
@@ -66,8 +127,10 @@ onMounted(async () => {
   } catch (err) {
     console.error(err)
   }
-})
+}
 console.log(localStorage)
+
+onMounted(booksFetch)
 
 const user = ref('')
 const isvisible = ref(true)

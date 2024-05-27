@@ -36,6 +36,90 @@ class Model
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function downloadBook($bookId){
+
+        $stm = $this->db->prepare("SELECT title, book_file
+                                        from books
+                                        where id_book = :id_book");
+        $stm->bindParam(':id_book',$bookId);
+        $stm->execute();
+
+        $book = $stm->fetch(PDO::FETCH_ASSOC);
+
+        
+         $fileName = $book['title'];
+         $filePath = $book['book_file'];
+
+         $fullPath = '../view/files/' . $filePath;
+
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: ' . basename($fullPath));
+        header('Content-Transfer-Encoding: binary');
+        header('Content-Length: ' . filesize($fullPath));
+
+        readfile($fullPath);
+        exit();
+
+        return ['title' => $fileName, 'bookFile' => $filePath,'FullPath' =>$fullPath];
+
+
+    }
+
+
+    public function deleteBook($bookId)
+    {
+        $stm = $this->db->prepare("DELETE
+                                    from books
+                                    using users
+                                    where id_book = :id_book and books.user_id = users.id");
+        
+        $stm->bindParam(':id_book',$bookId);
+    
+
+        if ($stm->execute()){
+            return ['status' => 'success', 'message' => 'Карточка удалена'];
+        } else {
+            return ['status' => 'error', 'message' => 'Данные не добавлены'];
+        }
+
+
+    }
+
+    public function editBook($bookId)
+    {
+        $stm = $this->db->prepare("SELECT * from books where id_book = :id_book");
+
+        $stm->bindParam(':id_book',$bookId);
+
+        $stm->execute();
+
+        return $stm->fetch(PDO::FETCH_OBJ);
+
+
+    }
+
+    public function addBook($book,$author,$allowDownload,$userId,$uniqueName1,$uniqueName){
+        $stm = $this->db->prepare("INSERT into books (title, author, cover_image, book_file, allow_download, user_id)
+        values (:title, :author, :cover_image, :book_file, :allow_download, :user_id)");
+
+        $stm->bindParam(':title',$book);
+        $stm->bindParam(':author',$author);
+        $stm->bindParam(':cover_image',$uniqueName);
+        $stm->bindParam(':book_file',$uniqueName1);
+        $stm->bindParam(':allow_download',$allowDownload);
+        $stm->bindParam(':user_id',$userId);
+
+
+        if ($stm->execute()){
+            return ['status' => 'success', 'message' => 'Данные добавлены'];
+        } else {
+            return ['status' => 'error', 'message' => 'Данные не добавлены'];
+        }
+        
+
+    }
+
     public function addUsers($login,$fio,$password)
     {
 

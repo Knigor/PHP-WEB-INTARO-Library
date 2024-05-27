@@ -5,13 +5,14 @@
         <div class="flex flex-row w-full">
           <div class="px-10 py-5 w-full">
             <Button @click="backPage" class="ml-[-15px]" variant="link"> Вернуться </Button>
-            <p class="text-xl text-inter-title mb-1">Добавьте новую книгу</p>
+            <p class="text-xl text-inter-title mb-1">Отредактируйте книгу</p>
 
-            <Input v-model="books" class="mt-5 mb-5" placeholder="Введите название книги" />
-            <Input v-model="author" class="mt-5 mb-5" placeholder="Введите автора" />
+            {{ items.title }}
+            <Input v-model="books" class="mt-5 mb-5" :placeholder="items.title" />
+            <Input v-model="author" class="mt-5 mb-5" :placeholder="items.author" />
 
             <div class="flex items-center space-x-2">
-              <Switch @click="activeDownload" />
+              <Switch :checked="checkDownload" @click="activeDownload" />
               <Label for="airplane-mode">Разрешить скачивание</Label>
             </div>
 
@@ -113,6 +114,7 @@
 
             <div class="flex justify-end mt-5">
               <Button @click="saveData"> Добавить </Button>
+              {{ route.params.id }}
             </div>
           </div>
         </div>
@@ -122,8 +124,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import axios from 'axios'
@@ -134,12 +136,6 @@ const router = useRouter()
 
 const coverImage = ref(null)
 const bookFile = ref(null)
-let checkDownload = ref(false)
-
-const activeDownload = () => {
-  checkDownload.value = !checkDownload.value
-  console.log(checkDownload.value)
-}
 
 const handleCoverUpload = (event) => {
   const file = event.target.files[0]
@@ -157,38 +153,39 @@ const handleBookUpload = (event) => {
   }
 }
 
-let author = ref('')
-let books = ref('')
+// const route = useRoute()
 
-const saveData = async () => {
-  const formData = new FormData()
-  formData.append('books', books.value)
-  formData.append('author', author.value)
-  formData.append('allow_download', checkDownload.value)
-  if (coverImage.value) {
-    formData.append('cover_image', coverImage.value)
-  }
-  if (bookFile.value) {
-    formData.append('book_file', bookFile.value)
-  }
-  formData.append('user_id', localStorage.id_user)
+const route = useRoute()
 
-  for (var pair of formData.entries()) {
-    console.log(pair[0] + ': ' + pair[1])
-  }
+const items = ref({})
+
+let checkDownload = ref()
+
+const activeDownload = () => {
+  checkDownload.value = !checkDownload.value
+  console.log(checkDownload.value)
+}
+
+const fetchData = async () => {
+  const apiFormData = new FormData()
+  apiFormData.append('id', route.params.id)
 
   try {
-    const response = await axios.post('http://localhost/add-book', formData, {
+    const response = await axios.post('http://localhost/editBook', apiFormData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
 
+    items.value = response.data
+    checkDownload.value = response.data.allow_download
     console.log(response.data)
   } catch (error) {
     console.error('Ошибка при отправке данных:', error)
   }
 }
+
+onMounted(fetchData)
 
 const backPage = () => {
   router.push('/')
